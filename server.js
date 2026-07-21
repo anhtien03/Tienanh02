@@ -60,10 +60,11 @@ discordClient.on('messageCreate', async (message) => {
   }
 });
 
-function parseTransactionText(text) {
+function parseTransactionText(text, messageCreatedAt) {
   const cleanText = text.toLowerCase().trim();
   let amount = 0;
   
+  // 1. Tìm số tiền
   const trRegex = /(\d+[\.,]?\d*)\s*(tr|triệu)/i;
   const kRegex = /(\d+)\s*k/i;
 
@@ -75,7 +76,9 @@ function parseTransactionText(text) {
     const match = cleanText.match(kRegex);
     amount = parseFloat(match[1]) * 1000;
   } else {
-    const matches = cleanText.replace(/\./g, '').match(/\d+/);
+    // Tạm loại bỏ ngày tháng ra trước khi tìm số tiền
+    const textWithoutDate = cleanText.replace(/(\d{1,2})[\/-](\d{1,2})([\/-]\d{4})?/, '');
+    const matches = textWithoutDate.replace(/\./g, '').match(/\d+/);
     if (matches) {
       amount = parseFloat(matches[0]);
     }
@@ -83,12 +86,26 @@ function parseTransactionText(text) {
 
   if (!amount || amount <= 0) return null;
 
+  // 2. Tìm ngày tháng được ghi rõ trong tin nhắn (Ví dụ: "ngày 21/07", "21/07/2026", "21-07")
+  let customDate = null;
+  const dateRegex = /(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?/;
+  const dateMatch = cleanText.match(dateRegex);
+  if (dateMatch) {
+    const day = String(dateMatch[1]).padStart(2, '0');
+    const month = String(dateMatch[2]).padStart(2, '0');
+    const now = new Date(messageCreatedAt);
+    const year = dateMatch[3] ? dateMatch[3] : now.getFullYear();
+    customDate = `${year}-${month}-${day}`;
+  }
+
+  // 3. Phân loại Thu/Chi
   let type = 'expense';
   const incomeKeywords = ['lương', 'thu', 'tiền lương', 'thưởng', 'cộng', 'lương ứng', 'tạm ứng'];
   if (incomeKeywords.some(k => cleanText.includes(k))) {
     type = 'income';
   }
 
+  // 4. Phân loại Danh mục
   let category = 'other_exp';
   if (type === 'income') {
     if (cleanText.includes('ứng') || cleanText.includes('đợt 1')) category = 'salary_advance';
@@ -105,15 +122,20 @@ function parseTransactionText(text) {
     else if (cleanText.includes('thuốc') || cleanText.includes('khám') || cleanText.includes('sức khỏe')) category = 'health';
   }
 
-  let note = text.replace(/\d+[\.,]?\d*\s*(tr|triệu|k|vnđ|đ)?/gi, '').replace(/[-+]/g, '').trim();
+  // 5. Làm sạch ghi chú (Loại bỏ ngày tháng & số tiền ra khỏi ghi chú)
+  let note = text;
+  note = note.replace(/(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?/gi, '');
+  note = note.replace(/\d+[\.,]?\d*\s*(tr|triệu|k|vnđ|đ)?/gi, '');
+  note = note.replace(/(ngày|hôm)?/gi, '');
+  note = note.replace(/[-+]/g, '').trim();
   if (!note) note = type === 'income' ? 'Thu nhập qua Discord' : 'Chi tiêu qua Discord';
 
-  return { amount, type, category, note };
+  return { amount, type, category, note, customDate };
 }
 
 function processTransactionMessage(content, createdAt) {
   try {
-    const parsed = parseTransactionText(content);
+    const parsed = parseTransactionText(content, createdAt);
     if (!parsed) return { success: false };
 
     let data = { transactions: [], budgets: {}, theme: 'dark', cycleStartDay: 7 };
@@ -122,7 +144,7 @@ function processTransactionMessage(content, createdAt) {
     }
 
     const timestampId = new Date(createdAt).getTime().toString();
-    const dStr = new Date(createdAt).toISOString().split('T')[0];
+    const dStr = parsed.customDate || new Date(createdAt).toISOString().split('T')[0];
     const isExist = data.transactions.some(tx => tx.note === parsed.note && tx.amount === parsed.amount && tx.date === dStr);
     if (isExist) return { success: false };
 
