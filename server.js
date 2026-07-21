@@ -144,7 +144,11 @@ function processTransactionMessage(content, createdAt) {
   }
 }
 
-discordClient.login(BOT_TOKEN);
+if (BOT_TOKEN) {
+  discordClient.login(BOT_TOKEN).catch(err => {
+    console.error("Lỗi kết nối Discord Bot:", err.message);
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Web Server running on port ${PORT}`);
