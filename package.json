@@ -1,0 +1,22 @@
+{
+  "name": "quan-ly-chi-tieu-thang",
+  "version": "1.0.0",
+  "description": "Ung dung desktop quan ly chi tieu va tinh tien theo thang",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "expense-tracker",
+    "desktop-app",
+    "electron"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^35.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}

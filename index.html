@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Chi Tiêu Hàng Tháng</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js CDN (đã bao gồm script vẽ biểu đồ) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation / Top Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-box">
+          <i data-lucide="wallet" class="logo-icon"></i>
+          <h1>MoneyCare <span>Pro</span></h1>
+        </div>
+        <div class="month-selector-group">
+          <label for="select-month"><i data-lucide="calendar"></i> Tháng/Năm:</label>
+          <input type="month" id="select-month" value="">
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-budget" class="btn btn-secondary">
+          <i data-lucide="target"></i> Ngân Sách Tháng
+        </button>
+        <button id="btn-export" class="btn btn-secondary">
+          <i data-lucide="download"></i> Xuất Báo Cáo CSV
+        </button>
+        <button id="btn-theme-toggle" class="btn-icon" title="Đổi giao diện Sáng/Tối">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-content">
+      <!-- 4 Thẻ Summary Thống Kê -->
+      <section class="summary-cards">
+        <div class="card card-income">
+          <div class="card-icon"><i data-lucide="trending-up"></i></div>
+          <div class="card-info">
+            <span class="card-label">Tổng Thu Nhập</span>
+            <h3 id="stat-total-income">0 ₫</h3>
+          </div>
+        </div>
+
+        <div class="card card-expense">
+          <div class="card-icon"><i data-lucide="trending-down"></i></div>
+          <div class="card-info">
+            <span class="card-label">Tổng Chi Tiêu</span>
+            <h3 id="stat-total-expense">0 ₫</h3>
+          </div>
+        </div>
+
+        <div class="card card-balance">
+          <div class="card-icon"><i data-lucide="scale"></i></div>
+          <div class="card-info">
+            <span class="card-label">Số Dư Còn Lại</span>
+            <h3 id="stat-balance">0 ₫</h3>
+          </div>
+        </div>
+
+        <div class="card card-budget">
+          <div class="card-icon"><i data-lucide="pie-chart"></i></div>
+          <div class="card-info">
+            <span class="card-label">Tiến Độ Ngân Sách</span>
+            <h3 id="stat-budget-progress">0%</h3>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="budget-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Grid layout 2 cột: Bên trái Form & Biểu đồ, Bên phải Danh sách -->
+      <div class="dashboard-grid">
+        <!-- Cột Trái -->
+        <div class="grid-left">
+          <!-- Form Thêm Giao Dịch -->
+          <div class="panel form-panel">
+            <div class="panel-header">
+              <h2><i data-lucide="plus-circle"></i> Thêm Giao Dịch Mới</h2>
+              <div class="type-toggle">
+                <button type="button" class="btn-toggle active" id="toggle-expense" data-type="expense">Chi Tiêu</button>
+                <button type="button" class="btn-toggle" id="toggle-income" data-type="income">Thu Nhập</button>
+              </div>
+            </div>
+
+            <form id="transaction-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="tx-amount">Số Tiền (VNĐ) <span class="required">*</span></label>
+                  <div class="input-prefix-wrapper">
+                    <input type="text" id="tx-amount" placeholder="Ví dụ: 150.000" required autocomplete="off">
+                    <span class="prefix">₫</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="tx-category">Danh Mục <span class="required">*</span></label>
+                  <select id="tx-category" required>
+                    <!-- Tự động load bởi JavaScript -->
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="tx-date">Ngày Giao Dịch (Ngày/Tháng/Năm) <span class="required">*</span></label>
+                  <input type="text" id="tx-date" placeholder="DD/MM/YYYY (ví dụ: 21/07/2026)" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                  <label for="tx-payment">Thanh Toán Qua</label>
+                  <select id="tx-payment">
+                    <option value="Tài khoản Ngân hàng">Tài khoản Ngân hàng</option>
+                    <option value="Tiền mặt">Tiền mặt</option>
+                    <option value="Ví điện tử (Momo/ZaloPay)">Ví điện tử (Momo/ZaloPay)</option>
+                    <option value="Thẻ tín dụng">Thẻ tín dụng</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="tx-note">Ghi Chú / Nội Dung</label>
+                <input type="text" id="tx-note" placeholder="Nhập chi tiết ghi chú (vd: Mua đồ siêu thị, Tiền lương...)">
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-block">
+                  <i data-lucide="check"></i> Lưu Giao Dịch
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Panel Biểu Đồ -->
+          <div class="panel chart-panel">
+            <div class="panel-header">
+              <h2><i data-lucide="bar-chart-3"></i> Biểu Đồ Chi Tiêu Theo Hạng Mục</h2>
+            </div>
+            <div class="chart-container">
+              <canvas id="category-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột Phải: Danh Sách & Tìm Kiếm -->
+        <div class="grid-right">
+          <div class="panel table-panel">
+            <div class="panel-header">
+              <h2><i data-lucide="list"></i> Lịch Sử Giao Dịch</h2>
+              <span class="badge" id="tx-count">0 giao dịch</span>
+            </div>
+
+            <!-- Toolbar Tìm Kiếm & Lọc -->
+            <div class="table-toolbar">
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-input" placeholder="Tìm kiếm theo ghi chú, số tiền...">
+              </div>
+              <div class="filter-box">
+                <select id="filter-type">
+                  <option value="all">Tất cả loại</option>
+                  <option value="expense">Chỉ Chi Tiêu</option>
+                  <option value="income">Chỉ Thu Nhập</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bảng Giao Dịch -->
+            <div class="table-responsive">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Danh Mục</th>
+                    <th>Ghi Chú</th>
+                    <th>Thanh Toán</th>
+                    <th class="text-right">Số Tiền</th>
+                    <th class="text-center">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-list-body">
+                  <!-- JS sẽ tạo hàng dữ liệu ở đây -->
+                </tbody>
+              </table>
+              <div id="empty-state" class="empty-state">
+                <i data-lucide="inbox"></i>
+                <p>Chưa có giao dịch nào trong tháng này.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal Thiết Lập Ngân Sách -->
+    <div id="modal-budget" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Cài Đặt Ngân Sách Chi Tiêu Tháng</h3>
+          <button class="btn-close" id="btn-close-budget"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="cycle-start-day">Ngày bắt đầu chu kỳ lương/chi tiêu hàng tháng:</label>
+            <select id="cycle-start-day">
+              <option value="1">Ngày 01 hàng tháng (Chu kỳ tiêu chuẩn 1 - 31)</option>
+              <option value="5">Ngày 05 hàng tháng</option>
+              <option value="7" selected>Ngày 07 hàng tháng (Ví dụ: Từ 07/07 đến 06/08)</option>
+              <option value="10">Ngày 10 hàng tháng</option>
+              <option value="15">Ngày 15 hàng tháng</option>
+              <option value="20">Ngày 20 hàng tháng</option>
+              <option value="25">Ngày 25 hàng tháng</option>
+            </select>
+            <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+              💡 <i>Ví dụ nếu chọn Ngày 07: Chu kỳ Tháng 7 sẽ tính từ ngày 07/07/2026 đến hết ngày 06/08/2026.</i>
+            </small>
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="budget-input">Hạn Mức Ngân Sách Cho Chu Kỳ Này (VNĐ):</label>
+            <input type="text" id="budget-input" placeholder="Nhập ngân sách chi tối đa trong chu kỳ (ví dụ: 10.000.000)..." autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="discord-webhook-input">Discord Webhook URL (Gửi thông báo về Discord):</label>
+            <input type="text" id="discord-webhook-input" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="discord-bot-token-input">Discord Bot Token (Đọc tin nhắn từ Discord):</label>
+            <input type="password" id="discord-bot-token-input" placeholder="Dán mã Bot Token vào đây..." autocomplete="off">
+            <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+              💡 <i>Nếu bạn bấm Reset Token trên Discord Developer Portal, hãy dán Token mới nhất vào đây.</i>
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="btn-cancel-budget">Hủy</button>
+          <button class="btn btn-primary" id="btn-save-budget">Lưu Ngân Sách</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
