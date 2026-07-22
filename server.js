@@ -50,6 +50,26 @@ discordClient.once('ready', () => {
 discordClient.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
+  const textLower = message.content.toLowerCase().trim();
+
+  // Đọc mật khẩu hiện tại từ file dữ liệu
+  let currentPassword = '';
+  try {
+    if (fs.existsSync(DATA_FILE_PATH)) {
+      const dataContent = JSON.parse(fs.readFileSync(DATA_FILE_PATH, 'utf-8'));
+      currentPassword = dataContent.appPassword || '';
+    }
+  } catch (err) {}
+
+  // Lệnh kiểm tra mật khẩu web từ Discord
+  if (textLower === '!matkhau' || textLower === '!pass' || textLower === 'mật khẩu' || textLower === 'mat khau') {
+    if (currentPassword) {
+      return message.reply(`🔒 Mật khẩu đăng nhập Web MoneyCare Pro của bạn hiện tại là: **${currentPassword}**`);
+    } else {
+      return message.reply(`🔓 Trang Web MoneyCare Pro hiện tại **chưa cài đặt mật khẩu** (mở trực tiếp không cần đăng nhập). Bạn có thể vào Cài Đặt trên Web để tự tạo mật khẩu nhé!`);
+    }
+  }
+
   const result = processTransactionMessage(message.content, message.createdAt);
   if (result.success) {
     try {
