@@ -107,30 +107,8 @@ discordClient.on('messageCreate', async (message) => {
 function parseTransactionText(text, messageCreatedAt) {
   const cleanText = text.toLowerCase().trim();
   let amount = 0;
-  
-  // 1. Tìm số tiền
-  const trRegex = /(\d+[\.,]?\d*)\s*(tr|triệu)/i;
-  const kRegex = /(\d+)\s*k/i;
 
-  if (trRegex.test(cleanText)) {
-    const match = cleanText.match(trRegex);
-    let val = parseFloat(match[1].replace(',', '.'));
-    amount = val * 1000000;
-  } else if (kRegex.test(cleanText)) {
-    const match = cleanText.match(kRegex);
-    amount = parseFloat(match[1]) * 1000;
-  } else {
-    // Tạm loại bỏ ngày tháng ra trước khi tìm số tiền
-    const textWithoutDate = cleanText.replace(/(\d{1,2})[\/-](\d{1,2})([\/-]\d{4})?/, '');
-    const matches = textWithoutDate.replace(/\./g, '').match(/\d+/);
-    if (matches) {
-      amount = parseFloat(matches[0]);
-    }
-  }
-
-  if (!amount || amount <= 0) return null;
-
-  // 2. Tìm ngày tháng được ghi rõ trong tin nhắn (Ví dụ: "ngày 21/07", "21/07/2026", "21-07")
+  // 1. Tìm ngày tháng được ghi rõ trong tin nhắn trước (Ví dụ: "ngày 21/07", "21/07/2026", "21-07")
   let customDate = null;
   const dateRegex = /(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?/;
   const dateMatch = cleanText.match(dateRegex);
@@ -141,6 +119,29 @@ function parseTransactionText(text, messageCreatedAt) {
     const year = dateMatch[3] ? dateMatch[3] : now.getFullYear();
     customDate = `${year}-${month}-${day}`;
   }
+
+  // Tạo chuỗi văn bản đã loại bỏ đoạn ngày tháng để không bị nhầm lẫn con số ngày/tháng với số tiền
+  const textWithoutDate = cleanText.replace(/(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?/g, '');
+  
+  // 2. Tìm số tiền từ chuỗi văn bản đã lọc ngày
+  const trRegex = /(\d+[\.,]?\d*)\s*(tr|triệu)/i;
+  const kRegex = /(\d+)\s*k/i;
+
+  if (trRegex.test(textWithoutDate)) {
+    const match = textWithoutDate.match(trRegex);
+    let val = parseFloat(match[1].replace(',', '.'));
+    amount = val * 1000000;
+  } else if (kRegex.test(textWithoutDate)) {
+    const match = textWithoutDate.match(kRegex);
+    amount = parseFloat(match[1]) * 1000;
+  } else {
+    const matches = textWithoutDate.replace(/\./g, '').match(/\d+/);
+    if (matches) {
+      amount = parseFloat(matches[0]);
+    }
+  }
+
+  if (!amount || amount <= 0) return null;
 
   // 3. Phân loại Thu/Chi
   let type = 'expense';
