@@ -145,7 +145,11 @@ function parseTransactionText(text, messageCreatedAt) {
 
   // 3. Phân loại Thu/Chi
   let type = 'expense';
-  const incomeKeywords = ['lương', 'thu', 'tiền lương', 'thưởng', 'cộng', 'lương ứng', 'tạm ứng'];
+  const incomeKeywords = [
+    'lương', 'thu', 'tiền lương', 'thưởng', 'cộng', 'lương ứng', 'tạm ứng',
+    'trả lại', 'trả nợ', 'chuyển lại', 'hoàn tiền', 'nhận được', 'khách trả',
+    'đòi được', 'được trả', 'trả lại tiền'
+  ];
   if (incomeKeywords.some(k => cleanText.includes(k))) {
     type = 'income';
   }
