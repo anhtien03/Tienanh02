@@ -59,7 +59,7 @@ async function scanRecentDiscordMessages() {
             const messages = await channel.messages.fetch({ limit: 100 });
             messages.forEach(msg => {
               if (!msg.author.bot) {
-                processTransactionMessage(msg.content, msg.createdAt);
+                processTransactionMessage(msg.content, msg.createdAt, msg.id);
               }
             });
           } catch (err) {}
@@ -94,7 +94,7 @@ discordClient.on('messageCreate', async (message) => {
     }
   }
 
-  const result = processTransactionMessage(message.content, message.createdAt);
+  const result = processTransactionMessage(message.content, message.createdAt, message.id);
   if (result.success) {
     try {
       await message.reply(`✅ Đã lưu giao dịch: **${result.tx.note}** (${new Intl.NumberFormat('vi-VN').format(result.tx.amount)} ₫) vào hệ thống Cloud!`);
@@ -178,7 +178,7 @@ function parseTransactionText(text, messageCreatedAt) {
   return { amount, type, category, note, customDate };
 }
 
-function processTransactionMessage(content, createdAt) {
+function processTransactionMessage(content, createdAt, messageId = '') {
   try {
     const parsed = parseTransactionText(content, createdAt);
     if (!parsed) return { success: false };
@@ -188,13 +188,19 @@ function processTransactionMessage(content, createdAt) {
       data = JSON.parse(fs.readFileSync(DATA_FILE_PATH, 'utf-8'));
     }
 
-    const timestampId = new Date(createdAt).getTime().toString();
+    const uniqueId = messageId ? 'discord_' + messageId : 'discord_' + new Date(createdAt).getTime().toString();
     const dStr = parsed.customDate || new Date(createdAt).toISOString().split('T')[0];
-    const isExist = data.transactions.some(tx => tx.note === parsed.note && tx.amount === parsed.amount && tx.date === dStr);
+
+    // Kiểm tra trùng lặp theo ID tin nhắn duy nhất của Discord HOẶC nội dung + ngày + số tiền
+    const isExist = data.transactions.some(tx => 
+      tx.id === uniqueId || 
+      (tx.note === parsed.note && tx.amount === parsed.amount && tx.date === dStr)
+    );
+
     if (isExist) return { success: false };
 
     const newTx = {
-      id: 'discord_' + timestampId,
+      id: uniqueId,
       type: parsed.type,
       amount: parsed.amount,
       category: parsed.category,
