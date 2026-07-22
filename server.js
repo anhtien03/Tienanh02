@@ -43,9 +43,33 @@ const discordClient = new Client({
   ]
 });
 
-discordClient.once('ready', () => {
+discordClient.once('ready', async () => {
   console.log(`[Render Cloud Bot Online]: ${discordClient.user.tag}`);
+  await scanRecentDiscordMessages();
 });
+
+async function scanRecentDiscordMessages() {
+  try {
+    const guilds = discordClient.guilds.cache;
+    for (const [guildId, guild] of guilds) {
+      const channels = guild.channels.cache;
+      for (const [channelId, channel] of channels) {
+        if (channel.isTextBased() && channel.viewable) {
+          try {
+            const messages = await channel.messages.fetch({ limit: 100 });
+            messages.forEach(msg => {
+              if (!msg.author.bot) {
+                processTransactionMessage(msg.content, msg.createdAt);
+              }
+            });
+          } catch (err) {}
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Lỗi đồng bộ lịch sử Discord:", err);
+  }
+}
 
 discordClient.on('messageCreate', async (message) => {
   if (message.author.bot) return;
