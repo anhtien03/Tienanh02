@@ -35,8 +35,36 @@
         <button id="btn-theme-toggle" class="btn-icon" title="Đổi giao diện Sáng/Tối">
           <i data-lucide="moon" id="theme-icon"></i>
         </button>
+        <button id="btn-logout" class="btn btn-secondary" title="Đăng Xuất">
+          <i data-lucide="log-out"></i> Đăng Xuất
+        </button>
       </div>
     </header>
+
+    <!-- Màn hình Đăng Nhập Overlay -->
+    <div id="login-overlay" class="login-overlay">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="login-logo">
+            <i data-lucide="shield-check"></i>
+          </div>
+          <h2>MoneyCare Pro</h2>
+          <p>Nhập mật khẩu để truy cập ứng dụng tài chính</p>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-password">Mật khẩu truy cập:</label>
+            <input type="password" id="login-password" placeholder="Nhập mật khẩu của bạn..." required autocomplete="current-password">
+          </div>
+          <div id="login-error" class="login-error" style="display: none;">
+            ⚠️ Mật khẩu không chính xác! Vui lòng thử lại.
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-login-submit">
+            <i data-lucide="key-round"></i> Đăng Nhập
+          </button>
+        </form>
+      </div>
+    </div>
 
     <!-- Main Content Grid -->
     <main class="main-content">
@@ -236,6 +264,10 @@
             <small style="color: var(--text-muted); margin-top: 4px; display: block;">
               💡 <i>Nếu bạn bấm Reset Token trên Discord Developer Portal, hãy dán Token mới nhất vào đây.</i>
             </small>
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="app-password-input">Mật Khẩu Đăng Nhập Web (Để trống nếu không đặt mật khẩu):</label>
+            <input type="password" id="app-password-input" placeholder="Nhập mật khẩu mới cho trang Web..." autocomplete="new-password">
           </div>
         </div>
         <div class="modal-footer">

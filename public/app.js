@@ -26,6 +26,7 @@ let state = {
   cycleStartDay: 7, // Mặc định ngày 7 hàng tháng (ví dụ: 07/07 -> 06/08)
   discordWebhook: 'https://discord.com/api/webhooks/1529152416375640225/94hW2fYaHQ--pTVoCcsAh_twl0wyJPY3L9WmgsvN6o3d4b3b7qc3ipBJLAXIFFeqoJhr', // Discord Webhook URL
   botToken: '', // Discord Bot Token
+  appPassword: '', // Mật khẩu ứng dụng (Để trống = Không cài mật khẩu)
   notifiedMilestones: {}, // Ghi nhớ mốc cảnh báo đã nhắn: { "2026-07-80": true }
   transactions: [], // Array các object giao dịch
   budgets: {}, // { "2026-07": 15000000 }
@@ -33,6 +34,7 @@ let state = {
   theme: 'dark'
 };
 
+let isAuthenticated = false;
 let categoryChart = null;
 
 // DOM Elements
@@ -46,6 +48,13 @@ const searchInput = document.getElementById('search-input');
 const filterTypeSelect = document.getElementById('filter-type');
 const txListBody = document.getElementById('tx-list-body');
 const emptyState = document.getElementById('empty-state');
+
+// Login DOM Elements
+const loginOverlay = document.getElementById('login-overlay');
+const loginForm = document.getElementById('login-form');
+const loginPasswordInput = document.getElementById('login-password');
+const loginErrorMsg = document.getElementById('login-error');
+const logoutBtn = document.getElementById('btn-logout');
 
 // Stat Elements
 const statIncome = document.getElementById('stat-total-income');
@@ -86,15 +95,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.lucide) lucide.createIcons();
 
   await loadData();
+  checkAuthenticationState();
   setupEventListeners();
-  render();
 
-  // Tự động làm mới dữ liệu từ Cloud mỗi 5 giây
+  // Tự động làm mới dữ liệu từ Cloud mỗi 5 giây nếu đã Đăng nhập
   setInterval(async () => {
-    await loadData();
-    render();
+    if (isAuthenticated) {
+      await loadData();
+      render();
+    }
   }, 5000);
 });
+
+function checkAuthenticationState() {
+  // Nếu ứng dụng chưa được cài đặt mật khẩu
+  if (!state.appPassword) {
+    isAuthenticated = true;
+    loginOverlay.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    render();
+    return;
+  }
+
+  if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+
+  // Kiểm tra phiên đăng nhập đã lưu trong LocalStorage chưa
+  const savedToken = localStorage.getItem('moneycare_auth_token');
+  if (savedToken && savedToken === state.appPassword) {
+    isAuthenticated = true;
+    loginOverlay.style.display = 'none';
+    render();
+  } else {
+    isAuthenticated = false;
+    loginOverlay.style.display = 'flex';
+  }
+}
 
 function getCurrentYearMonth() {
   const d = new Date();
@@ -120,6 +155,7 @@ async function loadData() {
         state.cycleStartDay = saved.cycleStartDay || 7;
         state.discordWebhook = saved.discordWebhook || state.discordWebhook || '';
         state.botToken = saved.botToken || state.botToken || '';
+        state.appPassword = saved.appPassword || '';
         state.notifiedMilestones = saved.notifiedMilestones || {};
       }
     }
@@ -142,6 +178,7 @@ async function saveData() {
         cycleStartDay: state.cycleStartDay,
         discordWebhook: state.discordWebhook,
         botToken: state.botToken,
+        appPassword: state.appPassword,
         notifiedMilestones: state.notifiedMilestones
       })
     });
@@ -257,12 +294,40 @@ function setupEventListeners() {
   const cycleSelect = document.getElementById('cycle-start-day');
   const webhookInput = document.getElementById('discord-webhook-input');
   const botTokenInput = document.getElementById('discord-bot-token-input');
+  const appPasswordInput = document.getElementById('app-password-input');
+
+  // Sự kiện Đăng Nhập Form
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputPass = loginPasswordInput.value.trim();
+    if (inputPass === state.appPassword) {
+      isAuthenticated = true;
+      localStorage.setItem('moneycare_auth_token', inputPass);
+      loginOverlay.style.display = 'none';
+      loginErrorMsg.style.display = 'none';
+      loginPasswordInput.value = '';
+      render();
+    } else {
+      loginErrorMsg.style.display = 'block';
+    }
+  });
+
+  // Sự kiện Đăng Xuất
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('moneycare_auth_token');
+      isAuthenticated = false;
+      loginOverlay.style.display = 'flex';
+    });
+  }
+
   document.getElementById('btn-budget').addEventListener('click', () => {
     const currentBudget = state.budgets[state.currentMonth] || 0;
     budgetInput.value = currentBudget ? new Intl.NumberFormat('vi-VN').format(currentBudget) : '';
     if (cycleSelect) cycleSelect.value = state.cycleStartDay || 7;
     if (webhookInput) webhookInput.value = state.discordWebhook || '';
     if (botTokenInput) botTokenInput.value = state.botToken || '';
+    if (appPasswordInput) appPasswordInput.value = state.appPassword || '';
     modalBudget.classList.add('show');
   });
 
@@ -294,11 +359,20 @@ function setupEventListeners() {
     if (botTokenInput) {
       state.botToken = botTokenInput.value.trim();
     }
+    if (appPasswordInput) {
+      state.appPassword = appPasswordInput.value.trim();
+      if (state.appPassword) {
+        localStorage.setItem('moneycare_auth_token', state.appPassword);
+      } else {
+        localStorage.removeItem('moneycare_auth_token');
+      }
+    }
     if (!isNaN(val) && val >= 0) {
       state.budgets[state.currentMonth] = val;
     }
     await saveData();
     modalBudget.classList.remove('show');
+    checkAuthenticationState();
     render();
   });
 
