@@ -11,24 +11,87 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_FILE_PATH = path.join(__dirname, 'expenses_data.json');
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://jzvaydvxopcrxfejxwco.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_rnJKvU3UWtCLhO-PLoNi2w_c0Kzqp5K';
 
-// API cho Web / App truy vấn dữ liệu
-app.get('/api/data', (req, res) => {
+async function loadData() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses_store?id=eq.1`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const list = await res.json();
+    if (list && list.length > 0) {
+      return list[0].data;
+    }
+  } catch (err) {
+    console.error("Lỗi loadData từ Supabase:", err.message);
+  }
+  
+  // Fallback đọc file local nếu có sự cố hoặc chạy offline
   try {
     if (fs.existsSync(DATA_FILE_PATH)) {
       const content = fs.readFileSync(DATA_FILE_PATH, 'utf-8');
-      return res.json(JSON.parse(content));
+      return JSON.parse(content);
     }
-    return res.json({ transactions: [], budgets: {}, theme: 'dark', cycleStartDay: 7 });
+  } catch (e) {
+    console.error("Lỗi đọc file backup local:", e.message);
+  }
+  return { transactions: [], budgets: {}, theme: 'dark', cycleStartDay: 7 };
+}
+
+async function saveData(data) {
+  try {
+    // Lưu local dự phòng
+    fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    console.error("Lỗi ghi file backup local:", e.message);
+  }
+
+  try {
+    // Lưu lên Supabase
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses_store?id=eq.1`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id: 1,
+        data: data,
+        updated_at: new Date().toISOString()
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to save to Supabase: ${res.status} - ${errText}`);
+    }
+    return true;
+  } catch (err) {
+    console.error("Lỗi saveData lên Supabase:", err.message);
+    return false;
+  }
+}
+
+// API cho Web / App truy vấn dữ liệu
+app.get('/api/data', async (req, res) => {
+  try {
+    const data = await loadData();
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/data', (req, res) => {
+app.post('/api/data', async (req, res) => {
   try {
-    fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(req.body, null, 2), 'utf-8');
-    res.json({ success: true });
+    const success = await saveData(req.body);
+    res.json({ success });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -57,11 +120,12 @@ async function scanRecentDiscordMessages() {
         if (channel.isTextBased() && channel.viewable) {
           try {
             const messages = await channel.messages.fetch({ limit: 100 });
-            messages.forEach(msg => {
+            // Duyệt bất đồng bộ tuần tự để đảm bảo không ghi đè dữ liệu trùng lặp lên Supabase
+            for (const [, msg] of messages) {
               if (!msg.author.bot) {
-                processTransactionMessage(msg.content, msg.createdAt, msg.id);
+                await processTransactionMessage(msg.content, msg.createdAt, msg.id);
               }
-            });
+            }
           } catch (err) {}
         }
       }
@@ -76,13 +140,11 @@ discordClient.on('messageCreate', async (message) => {
 
   const textLower = message.content.toLowerCase().trim();
 
-  // Đọc mật khẩu hiện tại từ file dữ liệu
+  // Đọc mật khẩu hiện tại từ Supabase
   let currentPassword = '';
   try {
-    if (fs.existsSync(DATA_FILE_PATH)) {
-      const dataContent = JSON.parse(fs.readFileSync(DATA_FILE_PATH, 'utf-8'));
-      currentPassword = dataContent.appPassword || '';
-    }
+    const dataContent = await loadData();
+    currentPassword = dataContent.appPassword || '';
   } catch (err) {}
 
   // Lệnh kiểm tra mật khẩu web từ Discord
@@ -94,7 +156,7 @@ discordClient.on('messageCreate', async (message) => {
     }
   }
 
-  const result = processTransactionMessage(message.content, message.createdAt, message.id);
+  const result = await processTransactionMessage(message.content, message.createdAt, message.id);
   if (result.success) {
     try {
       await message.reply(`✅ Đã lưu giao dịch: **${result.tx.note}** (${new Intl.NumberFormat('vi-VN').format(result.tx.amount)} ₫) vào hệ thống Cloud!`);
@@ -182,15 +244,12 @@ function parseTransactionText(text, messageCreatedAt) {
   return { amount, type, category, note, customDate };
 }
 
-function processTransactionMessage(content, createdAt, messageId = '') {
+async function processTransactionMessage(content, createdAt, messageId = '') {
   try {
     const parsed = parseTransactionText(content, createdAt);
     if (!parsed) return { success: false };
 
-    let data = { transactions: [], budgets: {}, theme: 'dark', cycleStartDay: 7 };
-    if (fs.existsSync(DATA_FILE_PATH)) {
-      data = JSON.parse(fs.readFileSync(DATA_FILE_PATH, 'utf-8'));
-    }
+    let data = await loadData();
 
     const uniqueId = messageId ? 'discord_' + messageId : 'discord_' + new Date(createdAt).getTime().toString();
     const dStr = parsed.customDate || new Date(createdAt).toISOString().split('T')[0];
@@ -214,7 +273,7 @@ function processTransactionMessage(content, createdAt, messageId = '') {
     };
 
     data.transactions.unshift(newTx);
-    fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    await saveData(data);
     return { success: true, tx: newTx };
   } catch (err) {
     return { success: false };

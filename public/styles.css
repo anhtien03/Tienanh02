@@ -1,45 +1,45 @@
 /* Design System & Variables */
 :root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: #1e293b;
-  --bg-input: #334155;
+  --bg-primary: #090d16; /* Deep rich space black */
+  --bg-secondary: #0f1524;
+  --bg-card: rgba(17, 24, 39, 0.7); /* Translucent Glassmorphic cards */
+  --bg-input: #1e293b;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --border-color: #334155;
+  --border-color: rgba(255, 255, 255, 0.08); /* Clean thin borders */
   
-  --primary-color: #6366f1;
+  --primary-color: #6366f1; /* Vibrant indigo */
   --primary-hover: #4f46e5;
   
-  --income-color: #10b981;
-  --income-bg: rgba(16, 185, 129, 0.15);
+  --income-color: #10b981; /* Emerald green */
+  --income-bg: rgba(16, 185, 129, 0.12);
   
-  --expense-color: #ef4444;
-  --expense-bg: rgba(239, 68, 68, 0.15);
+  --expense-color: #f43f5e; /* Vibrant coral pink/red */
+  --expense-bg: rgba(244, 63, 94, 0.12);
   
   --warning-color: #f59e0b;
   
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-md: 16px; /* Smooth rounded corners */
+  --radius-lg: 24px;
   
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   
-  --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 [data-theme="light"] {
-  --bg-primary: #f1f5f9;
+  --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
-  --bg-card: #ffffff;
-  --bg-input: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-input: #f1f5f9;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --border-color: rgba(15, 23, 42, 0.08);
   
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -54,6 +54,9 @@ body {
   color: var(--text-main);
   overflow-x: hidden;
   user-select: none;
+  background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 45%);
+  background-attachment: fixed;
 }
 
 .app-container {
@@ -67,40 +70,44 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 28px;
+  padding: 14px 24px;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 20px;
 }
 
 .logo-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .logo-icon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   color: var(--primary-color);
 }
 
 .logo-box h1 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
 
 .logo-box h1 span {
   color: var(--primary-color);
-  font-size: 14px;
-  background: rgba(99, 102, 241, 0.2);
-  padding: 2px 8px;
+  font-size: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 2px 6px;
   border-radius: 4px;
   margin-left: 4px;
 }
@@ -108,12 +115,12 @@ body {
 .month-selector-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--bg-primary);
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -123,7 +130,7 @@ body {
   color: var(--text-main);
   font-family: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   cursor: pointer;
 }
@@ -131,29 +138,32 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  gap: 6px;
+  padding: 8px 14px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap; /* Ngăn chặn chữ bị bẻ xuống dòng */
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 .btn-primary:hover {
   background-color: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -164,11 +174,12 @@ body {
 .btn-secondary:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+  background-color: rgba(99, 102, 241, 0.05);
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   background: var(--bg-primary);
@@ -177,6 +188,12 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-icon:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: rgba(99, 102, 241, 0.05);
 }
 
 /* Main Layout */
@@ -197,6 +214,7 @@ body {
 
 .card {
   background-color: var(--bg-card);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 20px;
@@ -204,15 +222,22 @@ body {
   align-items: center;
   gap: 16px;
   box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .card-icon {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 20px;
 }
 
 .card-income .card-icon {
@@ -234,23 +259,31 @@ body {
 
 .card-info {
   flex: 1;
+  min-width: 0; /* Cho phép text trôi chảy, không gây phình card */
 }
 
 .card-label {
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .card-info h3 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   margin-top: 4px;
+  letter-spacing: -0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .progress-bar-bg {
   width: 100%;
   height: 6px;
-  background-color: var(--bg-primary);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
   margin-top: 8px;
   overflow: hidden;
@@ -434,10 +467,12 @@ input:focus, select:focus {
 }
 
 .table-responsive {
+  overflow-x: auto;
   overflow-y: auto;
   max-height: 480px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
+  width: 100%;
 }
 
 .tx-table {
@@ -445,6 +480,7 @@ input:focus, select:focus {
   border-collapse: collapse;
   text-align: left;
   font-size: 13px;
+  min-width: 600px; /* Ngăn chặn co cụm toàn bảng */
 }
 
 .tx-table th {
@@ -455,11 +491,21 @@ input:focus, select:focus {
   position: sticky;
   top: 0;
   z-index: 10;
+  white-space: nowrap;
 }
 
 .tx-table td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+/* Cột ghi chú */
+.tx-table td:nth-child(3) {
+  white-space: normal;
+  min-width: 150px;
+  max-width: 250px;
+  word-break: break-word;
 }
 
 .tx-table tr:last-child td {
@@ -642,4 +688,135 @@ input:focus, select:focus {
   margin-top: 16px;
   padding: 12px;
   font-size: 15px;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN (MEDIA QUERIES)
+   =================================== */
+
+@media (max-width: 1250px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Chuyển về 1 cột để tránh bị bóp nghẹt chiều ngang */
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Tối ưu hóa Header trên Mobile */
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px 20px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .logo-box {
+    justify-content: center;
+  }
+
+  .month-selector-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Bố cục nút bấm trên Header Mobile */
+  .header-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-right .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Nút giao diện và Đăng xuất cho cùng 1 dòng */
+  #btn-theme-toggle {
+    grid-column: span 1;
+    width: 100%;
+    height: 38px;
+  }
+
+  #btn-logout {
+    grid-column: span 1;
+    width: 100%;
+    height: 38px;
+  }
+
+  .main-content {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  /* Thẻ tóm tắt co về 1 cột */
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  /* Tối ưu Form nhập giao dịch */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+
+  .form-actions {
+    margin-top: 8px;
+  }
+
+  /* Lịch sử giao dịch & Bộ lọc */
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search-box, .filter-box {
+    width: 100%;
+  }
+
+  .search-box input, .filter-box select {
+    width: 100%;
+  }
+
+  /* Login Overlay */
+  .login-card {
+    width: calc(100% - 32px);
+    max-width: 350px;
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Tối ưu màn hình cực nhỏ */
+  .header-right {
+    grid-template-columns: 1fr;
+  }
+  
+  #btn-theme-toggle, #btn-logout {
+    grid-column: span 1;
+  }
 }
